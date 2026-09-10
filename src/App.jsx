@@ -20,6 +20,7 @@ function App() {
     return (
         <>
             <section id="center">
+                <h1>React Frontend </h1>
                 {profile && <h1>{profile?.name}</h1>}
             </section>
         </>
