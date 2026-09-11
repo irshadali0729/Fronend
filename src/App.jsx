@@ -22,6 +22,7 @@ function App() {
             <section id="center">
                 <h1>React Frontend </h1>
                 <h2>Frontend deployement using CI CD </h2>
+                <h3>Finally</h3>
 
                 {profile && <h1>{profile?.name}</h1>}
             </section>
