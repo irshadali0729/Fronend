@@ -1,0 +1,95 @@
+CI/CD EC2 Deployment Notes
+==========================
+
+1. Find the EC2 username
+-------------------------
+Run this on EC2:
+
+    whoami
+
+Use the result as the GitHub Actions EC2_USERNAME secret.
+For the standard Ubuntu AMI, the username is usually:
+
+    ubuntu
+
+2. Configure GitHub Actions secrets
+------------------------------------
+In GitHub, open:
+
+    Repository Settings > Secrets and variables > Actions
+
+Create these repository secrets:
+
+    EC2_HOST
+    EC2_USERNAME
+    EC2_SSH_KEY
+
+EC2_HOST must contain the EC2 Public IPv4 address or Public IPv4 DNS.
+Do not use the private IP or private hostname, such as 172.31.x.x.
+
+EC2_USERNAME must contain the value returned by whoami.
+
+EC2_SSH_KEY must contain the complete private key, including its header and
+footer. Never commit this key to Git or save it in deploy.yml.
+
+3. Create the public key from the local private key
+----------------------------------------------------
+Run this in Windows PowerShell if the local key is id_rsa:
+
+    ssh-keygen -y -f "$HOME\.ssh\id_rsa" > "$HOME\.ssh\id_rsa.pub"
+
+Display the public key:
+
+    Get-Content "$HOME\.ssh\id_rsa.pub"
+
+Copy it to the clipboard:
+
+    Get-Content "$HOME\.ssh\id_rsa.pub" | Set-Clipboard
+
+If the key is a PEM file, replace the path with the PEM file path:
+
+    ssh-keygen -y -f "C:\path\to\your-key.pem"
+
+4. Add the public key to EC2
+----------------------------
+Log in to EC2 using an existing working key, then run:
+
+    mkdir -p ~/.ssh
+    chmod 700 ~/.ssh
+    nano ~/.ssh/authorized_keys
+
+Paste the complete public key as one line, save the file, then run:
+
+    chmod 600 ~/.ssh/authorized_keys
+
+The public key belongs in:
+
+    /home/<username>/.ssh/authorized_keys
+
+Do not copy the private key to EC2.
+
+5. Test the connection locally
+------------------------------
+From Windows PowerShell, replace the placeholders:
+
+    ssh -i "$HOME\.ssh\id_rsa" ubuntu@YOUR_EC2_PUBLIC_IP
+
+The same username, public IP, and matching private key must work in this test
+and in GitHub Actions.
+
+6. Allow SSH in AWS
+-------------------
+In the EC2 Security Group, allow inbound TCP port 22 from the required source.
+For a temporary test, use your current public IP. Avoid opening port 22 to
+0.0.0.0/0 except for a short test, then restrict it again.
+
+7. Deploy
+---------
+Push to the master branch:
+
+    git add .
+    git commit -m "update frontend"
+    git push origin master
+
+The workflow builds the Vite app, uploads dist to /home/ubuntu/Fronend, and
+copies the files into /var/www/html.
